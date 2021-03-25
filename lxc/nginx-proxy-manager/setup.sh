@@ -13,26 +13,26 @@ _version_npm=${_version_npm:-2.8.1}
 
 # add openresty repo
 if [ ! -f /etc/apk/keys/admin@openresty.com-5ea678a6.rsa.pub ]; then
-  wget -q -P /etc/apk/keys/ 'http://openresty.org/package/admin@openresty.com-5ea678a6.rsa.pub' &>/dev/null
+  wget -q -P /etc/apk/keys/ 'http://openresty.org/package/admin@openresty.com-5ea678a6.rsa.pub'
   echo "http://openresty.org/package/alpine/v$_version_alpine/main" >> /etc/apk/repositories
 fi
   
 # Update container OS
 info "Updating container OS..."
 apk update >/dev/null
-apk upgrade &>/dev/null
+apk upgrade
 
 echo "fs.file-max = 65535" > /etc/sysctl.conf
 
 # Install prerequisites
 info "Installing prerequisites..."
-apk add python3 git certbot jq openresty nodejs npm yarn openssl apache2-utils &>/dev/null
-python3 -m ensurepip &>/dev/null
+apk add python3 git certbot jq openresty nodejs npm yarn openssl apache2-utils
+python3 -m ensurepip
 
 if [ -f /etc/init.d/npm ]; then
   info "Stoping services..."
-  rc-service npm stop &>/dev/null
-  rc-service openresty stop &>/dev/null
+  rc-service npm stop
+  rc-service openresty stop
   sleep 2
 
   info "Cleaning old files..."
@@ -42,7 +42,7 @@ if [ -f /etc/init.d/npm ]; then
   /etc/nginx \
   /var/log/nginx \
   /var/lib/nginx \
-  /var/cache/nginx &>/dev/null
+  /var/cache/nginx
 fi
 
 # Download nginx-proxy-manager source
@@ -100,7 +100,7 @@ then
     -x509 \
     -subj '/O=Nginx Proxy Manager/OU=Dummy Certificate/CN=localhost' \
     -keyout /data/nginx/dummykey.pem \
-    -out /data/nginx/dummycert.pem &>/dev/null
+    -out /data/nginx/dummycert.pem
 fi
 
 # Copy app files
@@ -112,14 +112,14 @@ cp -r global/* /app/global
 info "Building frontend..."
 mkdir -p /app/frontend/images
 cd frontend
-yarn install &>/dev/null
-yarn build &>/dev/null
+yarn install
+yarn build
 cp -r dist/* /app/frontend
 cp -r app-images/* /app/frontend/images
 
 cd /app
 info "Initalizing backend..."
-rm -rf /app/config/default.json &>/dev/null
+rm -rf /app/config/default.json
 if [ ! -f /app/config/production.json ]; then
 cat << 'EOF' > /app/config/production.json
 {
@@ -135,11 +135,11 @@ cat << 'EOF' > /app/config/production.json
 }
 EOF
 fi
-yarn install &>/dev/null
+yarn install
 
 # Run setup
 export NODE_ENV=production
-node index.js &>/dev/null
+node index.js
 
 # Create required folders
 mkdir -p /data
@@ -152,8 +152,8 @@ cat << 'EOF' > /etc/conf.d/openresty
 cfgfile=/etc/nginx/nginx.conf
 app_prefix=/etc/nginx
 EOF
-rc-update add openresty boot &>/dev/null
-rc-service openresty stop &>/dev/null
+rc-update add openresty boot
+rc-service openresty stop
 
 [ -f /usr/sbin/nginx ] && rm /usr/sbin/nginx
 ln -s /usr/local/openresty/nginx/sbin/nginx /usr/sbin/nginx
@@ -195,14 +195,14 @@ restart() {
 }
 EOF
 chmod a+x /etc/init.d/npm
-rc-update add npm boot &>/dev/null
+rc-update add npm boot
 
 # Start services
 info "Starting services..."
-rc-service npm start &>/dev/null
-rc-service openresty start &>/dev/null
+rc-service npm start
+rc-service openresty start
 
 # Cleanup
 info "Cleaning up..."
-rm -rf $_temp_dir/nginx-proxy-manager-${_version_npm} &>/dev/null
-apk del git jq npm &>/dev/null
+rm -rf $_temp_dir/nginx-proxy-manager-${_version_npm}
+apk del git jq npm
